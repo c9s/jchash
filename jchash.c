@@ -4,6 +4,7 @@
 
 #include "php_jchash.h"
 #include "ext/standard/php_var.h"
+#include "ext/standard/crc32.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(jchash)
 
@@ -82,6 +83,17 @@ PHP_MINFO_FUNCTION(jchash)
     DISPLAY_INI_ENTRIES();
 }
 
+uint64_t JumpConsistentHash(zend_long key, zend_long num_buckets)
+{
+    uint64_t b = -1, j = 0;
+    while (j < num_buckets) {
+        b = j;
+        key = key * 2862933555777941757ULL + 1;
+        j = (b + 1) * ((double)(1LL << 31)) / ((double)((key >> 33) + 1));
+    }
+    return b;
+}
+
 PHP_FUNCTION(jchash)
 {
     zval *zvalkey;
@@ -90,7 +102,23 @@ PHP_FUNCTION(jchash)
         return;
     }
 
+    zend_long key;
+    if (Z_TYPE_P(zvalkey) == IS_STRING) {
 
+        zend_string *str = Z_STR_P(zvalkey);
+        char *p = str->val;
+        size_t nr = str->len;
+        uint32_t crcinit = 0;
+        register uint32_t crc;
 
-
+        crc = crcinit^0xFFFFFFFF;
+        for (; nr--; ++p) {
+          crc = ((crc >> 8) & 0x00FFFFFF) ^ crc32tab[(crc ^ (*p)) & 0xFF ];
+        }
+        key = crc^0xFFFFFFFF;
+    } else if (Z_TYPE_P(zvalkey) == IS_LONG) {
+        key = Z_LVAL_P(zvalkey);
+    }
+    uint64_t b = JumpConsistentHash(key, num_buckets);
+    ZVAL_LONG(return_value, b);
 }
