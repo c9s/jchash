@@ -83,9 +83,10 @@ PHP_MINFO_FUNCTION(jchash)
     DISPLAY_INI_ENTRIES();
 }
 
-uint64_t JumpConsistentHash(zend_long key, zend_long num_buckets)
+uint32_t JumpConsistentHash(uint64_t key, uint32_t num_buckets)
 {
-    uint64_t b = -1, j = 0;
+    // php_printf("key: %lu, num_buckets: %lu\n", key, num_buckets);
+    uint32_t b = -1, j = 0;
     while (j < num_buckets) {
         b = j;
         key = key * 2862933555777941757ULL + 1;
@@ -110,15 +111,18 @@ PHP_FUNCTION(jchash)
         size_t nr = str->len;
         uint32_t crcinit = 0;
         register uint32_t crc;
-
         crc = crcinit^0xFFFFFFFF;
         for (; nr--; ++p) {
           crc = ((crc >> 8) & 0x00FFFFFF) ^ crc32tab[(crc ^ (*p)) & 0xFF ];
         }
         key = crc^0xFFFFFFFF;
+
     } else if (Z_TYPE_P(zvalkey) == IS_LONG) {
         key = Z_LVAL_P(zvalkey);
     }
+
+    // php_printf("key: %lu, num_buckets: %lu\n", key, num_buckets);
+
     uint64_t b = JumpConsistentHash(key, num_buckets);
     ZVAL_LONG(return_value, b);
 }
