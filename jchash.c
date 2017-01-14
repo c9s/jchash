@@ -104,9 +104,10 @@ PHP_FUNCTION(jchash)
     }
 
     zend_long key;
+    zend_string *str;
     if (Z_TYPE_P(zvalkey) == IS_STRING) {
 
-        zend_string *str = Z_STR_P(zvalkey);
+        str = Z_STR_P(zvalkey);
         char *p = str->val;
         size_t nr = str->len;
         uint32_t crcinit = 0;
