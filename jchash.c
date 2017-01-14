@@ -120,6 +120,8 @@ PHP_FUNCTION(jchash)
 
     } else if (Z_TYPE_P(zvalkey) == IS_LONG) {
         key = Z_LVAL_P(zvalkey);
+    } else {
+        php_error_docref(NULL, E_ERROR, "Unsupported type of key");
     }
 
     // php_printf("key: %lu, num_buckets: %lu\n", key, num_buckets);
